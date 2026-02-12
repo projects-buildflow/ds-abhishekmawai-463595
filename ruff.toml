@@ -1,0 +1,2 @@
+# Only lint student code — exclude platform-provided files
+exclude = ["tests/", "data/", "scripts/"]

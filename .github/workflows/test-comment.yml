@@ -1,0 +1,100 @@
+name: Test Results Comment
+
+on:
+  workflow_run:
+    workflows: ["Task Submission"]
+    types: [completed]
+
+permissions:
+  pull-requests: write
+  actions: read
+
+jobs:
+  comment:
+    name: Post Test Results
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.event == 'pull_request'
+
+    steps:
+      - name: Download test report
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          workflow: submission.yml
+          run_id: ${{ github.event.workflow_run.id }}
+          name: test-report
+          path: ./reports
+        continue-on-error: true
+
+      - name: Post comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            // Read test report
+            const reportPath = './reports/test-report.json';
+            if (!fs.existsSync(reportPath)) {
+              console.log('No test report found, skipping comment');
+              return;
+            }
+
+            let report;
+            try {
+              report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+            } catch (e) {
+              console.log('Could not parse test report:', e);
+              return;
+            }
+
+            const summary = report.summary;
+
+            // Build comment
+            let body = '## Test Results\n\n';
+
+            if (summary.failed === 0 && summary.passed > 0) {
+              body += `**All tests passed!** (${summary.passed}/${summary.total})\n\n`;
+              body += 'Great work! Your submission is looking good.\n';
+            } else if (summary.failed > 0) {
+              body += `**${summary.failed} test(s) failed** (${summary.passed}/${summary.total} passed)\n\n`;
+
+              // Add failed test details
+              body += '### Failed Tests\n\n';
+              for (const test of report.tests || []) {
+                if (test.outcome === 'failed') {
+                  body += `**${test.nodeid}**\n`;
+                  const details = test.call?.longrepr || 'No details available';
+                  // Truncate long error messages
+                  const truncated = details.length > 1000
+                    ? details.substring(0, 1000) + '\n... (truncated)'
+                    : details;
+                  body += '```\n' + truncated + '\n```\n\n';
+                }
+              }
+
+              body += '### Tips\n';
+              body += '- Read the error messages carefully\n';
+              body += '- Check the task instructions\n';
+              body += '- Ask in Team Chat if you need help\n';
+            } else {
+              body += `**No tests ran** - this might be expected for some tasks.\n\n`;
+            }
+
+            // Get PR number from workflow run
+            const prs = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              head: `${context.repo.owner}:${context.payload.workflow_run.head_branch}`
+            });
+
+            if (prs.data.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prs.data[0].number,
+                body: body
+              });
+              console.log('Comment posted to PR #' + prs.data[0].number);
+            } else {
+              console.log('No open PR found for branch');
+            }

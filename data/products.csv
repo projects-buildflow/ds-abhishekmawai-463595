@@ -1,0 +1,47 @@
+id,name,category_id,base_price,cost
+P1001,Wireless Mouse Pro,CAT01,599,450
+P1002,Wireless Mouse Basic,CAT01,299,180
+P1003,Mechanical Keyboard RGB,CAT01,2499,1500
+P1004,Membrane Keyboard,CAT01,799,400
+P1005,USB-C Hub 7-in-1,CAT01,1299,700
+P1006,USB-C Hub 4-in-1,CAT01,699,350
+P1007,4K Webcam,CAT01,3999,2800
+P1008,HD Webcam,CAT01,1499,900
+P1009,"Portable Monitor 15.6""",CAT01,12999,9500
+P1010,Wireless Charger Pad,CAT01,899,400
+P2001,Ergonomic Office Chair,CAT02,15999,10000
+P2002,Standing Desk Electric,CAT02,24999,16000
+P2003,Monitor Stand Wooden,CAT02,1499,800
+P2004,Monitor Stand Metal,CAT02,999,500
+P2005,Desk Organizer Set,CAT02,799,350
+P2006,Filing Cabinet 3-Drawer,CAT02,4999,3000
+P3001,"Laptop Sleeve 15""",CAT03,999,400
+P3002,Laptop Backpack Pro,CAT03,2499,1200
+P3003,Mouse Pad XL Gaming,CAT03,599,200
+P3004,Mouse Pad Standard,CAT03,199,50
+P3005,Wrist Rest Keyboard,CAT03,699,300
+P3006,Blue Light Glasses,CAT03,999,350
+P3007,Laptop Stand Adjustable,CAT03,1299,600
+P4001,Noise Cancelling Headphones,CAT04,7999,5500
+P4002,Wireless Earbuds Pro,CAT04,4999,3000
+P4003,Wireless Earbuds Basic,CAT04,1999,1000
+P4004,USB Microphone Podcast,CAT04,5999,3500
+P4005,Desktop Speakers 2.1,CAT04,3499,2000
+P5001,Portable SSD 1TB,CAT05,5999,4500
+P5002,Portable SSD 500GB,CAT05,3499,2500
+P5003,USB Flash Drive 128GB,CAT05,699,350
+P5004,External HDD 2TB,CAT05,4499,3200
+P5005,Memory Card 256GB,CAT05,1999,1200
+P6001,LED Desk Lamp Smart,CAT06,2499,1400
+P6002,LED Desk Lamp Basic,CAT06,899,400
+P6003,Monitor Light Bar,CAT06,1999,1000
+P6004,"Ring Light 12""",CAT06,1499,700
+P7001,Standing Desk Mat,CAT07,2999,1800
+P7002,Footrest Adjustable,CAT07,1499,800
+P7003,Laptop Cooling Pad,CAT07,999,500
+P7004,Document Holder,CAT07,599,250
+P8001,USB-C Cable 2m Braided,CAT08,499,150
+P8002,HDMI Cable 4K 2m,CAT08,599,200
+P8003,Cable Management Kit,CAT08,799,300
+P8004,Power Strip 6-Outlet,CAT08,999,450
+P8005,USB-C to HDMI Adapter,CAT08,899,400
