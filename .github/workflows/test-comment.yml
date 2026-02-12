@@ -47,15 +47,18 @@ jobs:
             }
 
             const summary = report.summary;
+            const failed = summary.failed || 0;
+            const passed = summary.passed || 0;
+            const total = summary.total || 0;
 
             // Build comment
             let body = '## Test Results\n\n';
 
-            if (summary.failed === 0 && summary.passed > 0) {
-              body += `**All tests passed!** (${summary.passed}/${summary.total})\n\n`;
+            if (failed === 0 && passed > 0) {
+              body += `**All tests passed!** (${passed}/${total})\n\n`;
               body += 'Great work! Your submission is looking good.\n';
-            } else if (summary.failed > 0) {
-              body += `**${summary.failed} test(s) failed** (${summary.passed}/${summary.total} passed)\n\n`;
+            } else if (failed > 0) {
+              body += `**${failed} test(s) failed** (${passed}/${total} passed)\n\n`;
 
               // Add failed test details
               body += '### Failed Tests\n\n';
