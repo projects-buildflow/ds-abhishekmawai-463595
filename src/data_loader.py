@@ -42,8 +42,8 @@ def load_orders(data_path: str = None) -> pd.DataFrame:
     # Students should fix this by using the correct format or letting pandas infer
     df = pd.read_csv(
         data_path,
-        parse_dates=['order_date'],
-        date_format='%m/%d/%Y',  # BUG: Should be '%Y-%m-%d' or removed entirely
+        parse_dates=["order_date"],
+        date_format="%m/%d/%Y",  # BUG: Should be '%Y-%m-%d' or removed entirely
     )
 
     return df
