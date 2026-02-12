@@ -1,2 +1,2 @@
 [tool.black]
-exclude = "tests/|data/|scripts/"
+extend-exclude = "tests/|data/|scripts/"

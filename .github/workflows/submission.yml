@@ -109,7 +109,7 @@ jobs:
         id: black
         continue-on-error: true
         run: |
-          black --check . --exclude tests/ || echo "black_failed=true" >> $GITHUB_OUTPUT
+          black --check . --extend-exclude tests/ || echo "black_failed=true" >> $GITHUB_OUTPUT
 
       - name: Lint summary
         run: |
