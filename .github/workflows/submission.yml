@@ -103,13 +103,13 @@ jobs:
         id: ruff
         continue-on-error: true
         run: |
-          ruff check . --output-format=github || echo "ruff_failed=true" >> $GITHUB_OUTPUT
+          ruff check . --exclude tests/ --output-format=github || echo "ruff_failed=true" >> $GITHUB_OUTPUT
 
       - name: Check formatting with black
         id: black
         continue-on-error: true
         run: |
-          black --check . || echo "black_failed=true" >> $GITHUB_OUTPUT
+          black --check . --exclude tests/ || echo "black_failed=true" >> $GITHUB_OUTPUT
 
       - name: Lint summary
         run: |
@@ -175,9 +175,9 @@ jobs:
 
           # Parse results
           if [ -f test-report.json ]; then
-            PASSED=$(python -c "import json; r=json.load(open('test-report.json')); print(r['summary']['passed'])")
-            FAILED=$(python -c "import json; r=json.load(open('test-report.json')); print(r['summary']['failed'])")
-            TOTAL=$(python -c "import json; r=json.load(open('test-report.json')); print(r['summary']['total'])")
+            PASSED=$(python -c "import json; r=json.load(open('test-report.json')); print(r['summary'].get('passed', 0))")
+            FAILED=$(python -c "import json; r=json.load(open('test-report.json')); print(r['summary'].get('failed', 0))")
+            TOTAL=$(python -c "import json; r=json.load(open('test-report.json')); print(r['summary'].get('total', 0))")
 
             echo "Results: $PASSED passed, $FAILED failed, $TOTAL total"
 

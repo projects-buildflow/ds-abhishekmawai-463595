@@ -25,26 +25,20 @@ jobs:
             // Determine if AI review will run
             const needsAiReview = ['3', '4'].includes(week) || taskId === '3.4' || taskId === '4.4';
 
-            let body = `## Automated Review
-
-Thanks for submitting Task ${taskId}!
-
-**What happens next:**
-1. Path validation - checking you only modified allowed files
-2. Linting - checking code style
-3. Tests - running task-specific tests`;
+            let body = '## Automated Review\n\n'
+              + 'Thanks for submitting Task ' + taskId + '!\n\n'
+              + '**What happens next:**\n'
+              + '1. Path validation - checking you only modified allowed files\n'
+              + '2. Linting - checking code style\n'
+              + '3. Tests - running task-specific tests\n';
 
             if (needsAiReview) {
-              body += `
-4. AI Review - analyzing your notebook/dashboard`;
+              body += '4. AI Review - analyzing your notebook/dashboard\n';
             }
 
-            body += `
-
-Check the **Checks** tab above for real-time status.
-
----
-*Need help? Ask in Team Chat at https://buildflow.dev/team*`;
+            body += '\nCheck the **Checks** tab above for real-time status.\n\n'
+              + '---\n'
+              + '*Need help? Ask in Team Chat at https://buildflow.dev/team*';
 
             github.rest.issues.createComment({
               issue_number: context.issue.number,
