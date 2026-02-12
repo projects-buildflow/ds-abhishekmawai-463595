@@ -97,3 +97,4 @@ def load_products(data_path: str = None) -> pd.DataFrame:
     df = pd.read_csv(data_path)
     return df
 
+
