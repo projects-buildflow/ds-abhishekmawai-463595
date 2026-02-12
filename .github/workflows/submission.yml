@@ -219,13 +219,12 @@ jobs:
           if-no-files-found: ignore
 
   # ============================================
-  # Job 4: AI Review (for notebooks/screenshots)
+  # Job 4: AI Review
   # ============================================
   ai-review:
     name: AI Review
     runs-on: ubuntu-latest
     needs: [setup, test]
-    if: needs.setup.outputs.has_notebook == 'true' || needs.setup.outputs.has_screenshot == 'true'
 
     steps:
       - name: Trigger AI review
