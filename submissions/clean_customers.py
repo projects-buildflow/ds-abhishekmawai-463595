@@ -8,14 +8,15 @@ def clean_customer_data(input_path, output_path):
     df = pd.read_csv(input_path)
     rows_before = len(df)
 
+    # Drop missing names first (empty or NaN), then strip so we don't turn NaN into "nan"
+    missing_name = df["full_name"].isna() | (df["full_name"].astype(str).str.strip() == "")
+    df = df[~missing_name]
+
     # Strip whitespace from full_name and location
     if "full_name" in df.columns:
         df["full_name"] = df["full_name"].astype(str).str.strip()
     if "location" in df.columns:
         df["location"] = df["location"].astype(str).str.strip()
-
-    # Drop missing names (empty or NaN)
-    df = df[df["full_name"].notna() & (df["full_name"] != "")]
 
     # Fix invalid ages: remove rows where age < 0 or age > 120
     if "age" in df.columns:
@@ -41,5 +42,6 @@ def clean_customer_data(input_path, output_path):
     rows_after = len(df)
 
     return {
-       
+        "rows_before": rows_before,
+        "rows_after": rows_after,
     }
