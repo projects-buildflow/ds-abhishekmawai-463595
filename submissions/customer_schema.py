@@ -23,3 +23,4 @@ customer_schema = pa.DataFrameSchema(
 def validate_customers(df):
     """Validate customer DataFrame against schema."""
     return customer_schema.validate(df)
+
