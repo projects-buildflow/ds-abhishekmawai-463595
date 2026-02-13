@@ -174,4 +174,4 @@ No major transactional inconsistencies were identified.
 
 The dataset is structurally sound and internally consistent but contains several data quality issues including invalid demographic values, formatting inconsistencies, and extreme financial outliers.
 
-After cleaning and normalization, the dataset will be suitable for reliable analytics, segmentation, and revenue modeling.
+After cleaning and normalization, the dataset will be suitable for reliable analytics, segmentation, and revenue modeling
