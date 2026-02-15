@@ -8,9 +8,23 @@ Validates:
 - Top products match actual top 5 from data
 """
 
+import base64
 import csv
+import json
 import pytest
 from pathlib import Path
+
+# Reference values are encoded to prevent casual reading
+_REF = json.loads(base64.b64decode(
+    "eyJ0b3RhbF9yZXZlbnVlIjogWzYzNjYxMDEyLCA0NDM3MzgxMF0sICJhY3RpdmVfY3VzdG"
+    "9tZXJzIjogWzE4MzEsIDE1NjJdLCAiYXZnX29yZGVyX3ZhbHVlIjogWzg5OTcsIDg5ODVd"
+    "LCAidG9wX3Byb2R1Y3RzIjogWyJzdGFuZGluZyBkZXNrIGVsZWN0cmljIiwgImVyZ29ub2"
+    "1pYyBvZmZpY2UgY2hhaXIiLCAicG9ydGFibGUgbW9uaXRvciAxNS42XCIiLCAibm9pc2Ug"
+    "Y2FuY2VsbGluZyBoZWFkcGhvbmVzIiwgInVzYiBtaWNyb3Bob25lIHBvZGNhc3QiXSwgIn"
+    "RvbGVyYW5jZXMiOiB7InRvdGFsX3JldmVudWUiOiAwLjE1LCAiYWN0aXZlX2N1c3RvbWVy"
+    "cyI6IDAuMiwgImF2Z19vcmRlcl92YWx1ZSI6IDAuMTUsICJ0b3BfcHJvZHVjdHNfbWluX2"
+    "1hdGNoIjogM319"
+).decode())
 
 
 @pytest.fixture
@@ -96,6 +110,33 @@ class TestImageValidity:
         )
 
 
+def _check_numeric_metric(metrics_data, key, label):
+    """Check a numeric metric against obfuscated reference values."""
+    if metrics_data is None:
+        pytest.skip("metrics.csv not found")
+    if key not in metrics_data:
+        pytest.skip(f"{key} not in metrics.csv")
+
+    try:
+        student_val = float(metrics_data[key].replace(",", ""))
+    except ValueError:
+        pytest.fail(
+            f"Could not parse {key} value: '{metrics_data[key]}'\n"
+            f"Expected a number."
+        )
+
+    refs = _REF[key]
+    tol = _REF["tolerances"][key]
+
+    match = any(abs(student_val - r) / r <= tol for r in refs)
+
+    assert match, (
+        f"{label} value {student_val:,.2f} is outside the expected range.\n\n"
+        f"Check your calculation. Make sure you're using the correct columns\n"
+        f"from the source data."
+    )
+
+
 class TestMetricsCSV:
     """Validate metrics.csv file format and content."""
 
@@ -154,99 +195,16 @@ class TestMetricsCSV:
         )
 
     def test_total_revenue_accuracy(self, metrics_data):
-        """Total revenue should be within 15% of reference value."""
-        if metrics_data is None:
-            pytest.skip("metrics.csv not found")
-        if "total_revenue" not in metrics_data:
-            pytest.skip("total_revenue not in metrics.csv")
-
-        try:
-            student_val = float(metrics_data["total_revenue"].replace(",", ""))
-        except ValueError:
-            pytest.fail(
-                f"Could not parse total_revenue value: '{metrics_data['total_revenue']}'\n"
-                "Expected a number like 63661012 or 63,661,012"
-            )
-
-        # Accept either all-orders (~63.7M) or delivered-only (~44.4M)
-        ref_all = 63_661_012
-        ref_delivered = 44_373_810
-        tolerance = 0.15
-
-        within_all = abs(student_val - ref_all) / ref_all <= tolerance
-        within_delivered = abs(student_val - ref_delivered) / ref_delivered <= tolerance
-
-        assert within_all or within_delivered, (
-            f"Total revenue {student_val:,.0f} is not within 15% of expected.\n\n"
-            f"Reference values:\n"
-            f"  All orders:      ~63,661,012\n"
-            f"  Delivered only:  ~44,373,810\n\n"
-            "Check your revenue calculation. Common issues:\n"
-            "- Using 'subtotal' instead of 'total'\n"
-            "- Filtering out valid order statuses"
-        )
+        """Total revenue should be within tolerance of reference value."""
+        _check_numeric_metric(metrics_data, "total_revenue", "Total revenue")
 
     def test_active_customers_accuracy(self, metrics_data):
-        """Active customers should be within 20% of reference value."""
-        if metrics_data is None:
-            pytest.skip("metrics.csv not found")
-        if "active_customers" not in metrics_data:
-            pytest.skip("active_customers not in metrics.csv")
-
-        try:
-            student_val = float(metrics_data["active_customers"].replace(",", ""))
-        except ValueError:
-            pytest.fail(
-                f"Could not parse active_customers value: '{metrics_data['active_customers']}'\n"
-                "Expected a number like 1831"
-            )
-
-        # Accept either all-orders (~1831) or delivered-only (~1562)
-        ref_all = 1831
-        ref_delivered = 1562
-        tolerance = 0.20
-
-        within_all = abs(student_val - ref_all) / ref_all <= tolerance
-        within_delivered = abs(student_val - ref_delivered) / ref_delivered <= tolerance
-
-        assert within_all or within_delivered, (
-            f"Active customers {student_val:,.0f} is not within 20% of expected.\n\n"
-            f"Reference values:\n"
-            f"  All orders:      ~1,831\n"
-            f"  Delivered only:  ~1,562\n\n"
-            "Active customers = unique customer_id count in orders."
-        )
+        """Active customers should be within tolerance of reference value."""
+        _check_numeric_metric(metrics_data, "active_customers", "Active customers")
 
     def test_avg_order_value_accuracy(self, metrics_data):
-        """Average order value should be within 15% of reference value."""
-        if metrics_data is None:
-            pytest.skip("metrics.csv not found")
-        if "avg_order_value" not in metrics_data:
-            pytest.skip("avg_order_value not in metrics.csv")
-
-        try:
-            student_val = float(metrics_data["avg_order_value"].replace(",", ""))
-        except ValueError:
-            pytest.fail(
-                f"Could not parse avg_order_value value: '{metrics_data['avg_order_value']}'\n"
-                "Expected a number like 8997"
-            )
-
-        # Accept either all-orders (~8997) or delivered-only (~8985)
-        ref_all = 8997
-        ref_delivered = 8985
-        tolerance = 0.15
-
-        within_all = abs(student_val - ref_all) / ref_all <= tolerance
-        within_delivered = abs(student_val - ref_delivered) / ref_delivered <= tolerance
-
-        assert within_all or within_delivered, (
-            f"Avg order value {student_val:,.2f} is not within 15% of expected.\n\n"
-            f"Reference values:\n"
-            f"  All orders:      ~8,997\n"
-            f"  Delivered only:  ~8,985\n\n"
-            "AOV = total revenue / number of orders."
-        )
+        """Average order value should be within tolerance of reference value."""
+        _check_numeric_metric(metrics_data, "avg_order_value", "Avg order value")
 
     def test_top_products_accuracy(self, metrics_data):
         """At least 3 of top 5 products should match actual top 5."""
@@ -262,33 +220,24 @@ class TestMetricsCSV:
         if not student_products:
             pytest.skip("No top_product entries found in metrics.csv")
 
-        # Actual top 5 products by revenue from the dataset
-        actual_top_5 = [
-            "standing desk electric",
-            "ergonomic office chair",
-            "portable monitor 15.6\"",
-            "noise cancelling headphones",
-            "usb microphone podcast",
-        ]
+        actual_top = _REF["top_products"]
+        min_match = _REF["tolerances"]["top_products_min_match"]
 
         matches = 0
         for student_product in student_products:
-            for actual in actual_top_5:
-                # Fuzzy match: check if either contains the other or significant overlap
+            for actual in actual_top:
                 if actual in student_product or student_product in actual:
                     matches += 1
                     break
-                # Also check key words (first 2+ words match)
                 actual_words = set(actual.split())
                 student_words = set(student_product.split())
                 if len(actual_words & student_words) >= 2:
                     matches += 1
                     break
 
-        assert matches >= 3, (
-            f"Only {matches} of your top 5 products match the actual top 5.\n"
-            f"Need at least 3 matches.\n\n"
-            f"Your products: {student_products}\n\n"
+        assert matches >= min_match, (
+            f"Only {matches} of your top 5 products match the expected list.\n"
+            f"Need at least {min_match} matches.\n\n"
             "Hint: Top products are ranked by total revenue (price * quantity).\n"
             "Make sure you're joining orders with order_items and products."
         )
