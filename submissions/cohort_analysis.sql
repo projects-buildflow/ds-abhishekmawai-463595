@@ -28,3 +28,5 @@ SELECT
 FROM order_cohorts
 GROUP BY cohort_month
 ORDER BY cohort_month;
+
+
