@@ -10,6 +10,8 @@ This test verifies:
 5. Logging is configured
 6. Error handling is present
 7. config.py has path configuration
+8. Pipeline runs end-to-end with sample data
+9. Pipeline produces output files
 8. Pipeline runs end-to-end and produces output
 """
 
@@ -295,4 +297,139 @@ class TestCodeQuality:
             "run_pipeline.py should have:\n"
             "  if __name__ == '__main__':\n"
             "      run_pipeline()"
+        )
+
+
+class TestPipelineExecution:
+    """Run the pipeline end-to-end with sample data and verify output."""
+
+    SAMPLE_ORDERS = (
+        "order_id,customer_id,order_date,product,quantity,unit_price,status\n"
+        "1,101,2024-01-15,Widget A,2,29.99,completed\n"
+        "2,102,2024-01-15,Widget B,1,49.99,completed\n"
+        "3,101,2024-01-16,Widget A,3,29.99,completed\n"
+        "4,103,2024-01-16,Widget C,1,19.99,cancelled\n"
+        "5,102,2024-01-17,Widget B,2,49.99,pending\n"
+    )
+
+    SAMPLE_CUSTOMERS = (
+        "customer_id,name,email,signup_date,region\n"
+        "101,Alice Smith,alice@example.com,2023-06-01,North\n"
+        "102,Bob Jones,bob@example.com,2023-07-15,South\n"
+        "103,Carol Lee,carol@example.com,2023-08-20,North\n"
+    )
+
+    @pytest.fixture
+    def setup_sample_data(self, pipeline_path):
+        """Create sample CSV files so the pipeline has data to process."""
+        # Look for data/ relative to repo root (4 levels up from submissions/pipeline/)
+        repo_root = pipeline_path.parent.parent
+        data_dir = repo_root / "data"
+        data_dir.mkdir(exist_ok=True)
+
+        orders_file = data_dir / "orders.csv"
+        customers_file = data_dir / "customers.csv"
+
+        # Only create if missing — don't overwrite existing data
+        created = []
+        if not orders_file.exists():
+            orders_file.write_text(self.SAMPLE_ORDERS)
+            created.append(orders_file)
+        if not customers_file.exists():
+            customers_file.write_text(self.SAMPLE_CUSTOMERS)
+            created.append(customers_file)
+
+        yield data_dir
+
+        # Clean up only files we created
+        for f in created:
+            if f.exists():
+                f.unlink()
+
+    @pytest.fixture(autouse=True)
+    def add_pipeline_to_path(self, pipeline_path):
+        """Add pipeline folder to sys.path for imports."""
+        path_str = str(pipeline_path)
+        if path_str not in sys.path:
+            sys.path.insert(0, path_str)
+        yield
+        if path_str in sys.path:
+            sys.path.remove(path_str)
+
+    def _find_orchestrator(self):
+        """Import run_pipeline and find the orchestrator function."""
+        if "run_pipeline" in sys.modules:
+            del sys.modules["run_pipeline"]
+        mod = importlib.import_module("run_pipeline")
+        for name in ["run_pipeline", "main", "run"]:
+            fn = getattr(mod, name, None)
+            if fn and callable(fn):
+                return fn
+        return None
+
+    def test_pipeline_runs_without_error(self, pipeline_path, setup_sample_data):
+        """Pipeline must execute without raising an exception."""
+        for req in ["extract.py", "transform.py", "load.py", "run_pipeline.py", "config.py"]:
+            if not (pipeline_path / req).exists():
+                pytest.skip(f"{req} does not exist")
+
+        fn = self._find_orchestrator()
+        if fn is None:
+            pytest.skip("No orchestrator function found")
+
+        import os
+        old_cwd = os.getcwd()
+        try:
+            os.chdir(str(pipeline_path))
+            fn()
+        except Exception as e:
+            pytest.fail(
+                f"Pipeline crashed during execution: {e}\n\n"
+                "Your pipeline should handle errors gracefully.\n"
+                "Make sure it can process the sample data without crashing."
+            )
+        finally:
+            os.chdir(old_cwd)
+
+    def test_pipeline_produces_output(self, pipeline_path, setup_sample_data):
+        """Pipeline must create at least one output file."""
+        for req in ["extract.py", "transform.py", "load.py", "run_pipeline.py", "config.py"]:
+            if not (pipeline_path / req).exists():
+                pytest.skip(f"{req} does not exist")
+
+        fn = self._find_orchestrator()
+        if fn is None:
+            pytest.skip("No orchestrator function found")
+
+        # Collect existing files before running
+        def get_all_files(root):
+            return set(str(p) for p in root.rglob("*") if p.is_file())
+
+        repo_root = pipeline_path.parent.parent
+        files_before = get_all_files(repo_root)
+
+        import os
+        old_cwd = os.getcwd()
+        try:
+            os.chdir(str(pipeline_path))
+            fn()
+        except Exception:
+            pytest.skip("Pipeline crashed — see test_pipeline_runs_without_error")
+        finally:
+            os.chdir(old_cwd)
+
+        files_after = get_all_files(repo_root)
+        new_files = files_after - files_before
+
+        # Filter to likely output files (csv, json, txt, parquet)
+        output_extensions = {".csv", ".json", ".txt", ".parquet", ".xlsx"}
+        output_files = [
+            f for f in new_files
+            if Path(f).suffix.lower() in output_extensions
+        ]
+
+        assert len(output_files) >= 1, (
+            "Pipeline ran but did not produce any output files.\n"
+            "Your load stage should save results (e.g., CSV files) "
+            "to an output directory."
         )
