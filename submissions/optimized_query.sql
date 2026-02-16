@@ -26,3 +26,14 @@
       CROSS JOIN avg_order_total aot
       WHERE o.total > aot.avg_total
   ),
+  customer_totals AS (
+      SELECT o.customer_id, SUM(o.total) AS total_order_value
+      FROM orders o
+      INNER JOIN high_value_customers hvc ON o.customer_id = hvc.customer_id
+      GROUP BY o.customer_id
+  )
+  SELECT c.customer_id, c.first_name, c.last_name, c.email, c.signup_date
+  FROM customers c
+  INNER JOIN customer_totals ct ON c.customer_id = ct.customer_id
+  WHERE c.signup_date >= '2022-01-01'
+  ORDER BY ct.total_order_value DESC
