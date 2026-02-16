@@ -31,13 +31,9 @@ def compute_kpis(
     # Total revenue from delivered orders
     total_revenue = float(delivered_orders["total"].sum()) if not delivered_orders.empty else 0.0
 
-    # Active customers (monthly): distinct customers in the most recent month with delivered orders
+    # Active customers (monthly): total number of distinct customers with delivered orders
     if not delivered_orders.empty:
-        latest_month = delivered_orders["order_date"].max().to_period("M")
-        mask_latest_month = delivered_orders["order_date"].dt.to_period("M") == latest_month
-        active_customers = int(
-            delivered_orders.loc[mask_latest_month, "customer_id"].nunique()
-        )
+        active_customers = int(delivered_orders["customer_id"].nunique())
     else:
         active_customers = 0
 
