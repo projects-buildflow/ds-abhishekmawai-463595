@@ -79,7 +79,7 @@ class DataValidator:
 
         if age_val < 0:
             self.errors.append("Age cannot be negative")
-        if age_val > 120:
+        if age_val >= 120:
             self.errors.append("Age is unrealistically high")
 
     def _validate_phone(self, phone):
