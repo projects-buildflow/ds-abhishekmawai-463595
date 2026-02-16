@@ -449,3 +449,4 @@ class TestPipelineExecution:
             "Your load stage should save results (e.g., CSV files) "
             "to an output directory."
         )
+
