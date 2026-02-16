@@ -10,8 +10,6 @@ This test verifies:
 5. Logging is configured
 6. Error handling is present
 7. config.py has path configuration
-8. Pipeline runs end-to-end with sample data
-9. Pipeline produces output files
 8. Pipeline runs end-to-end and produces output
 """
 
@@ -319,10 +317,11 @@ class TestPipelineExecution:
         "103,Carol Lee,carol@example.com,2023-08-20,North\n"
     )
 
+    OUTPUT_EXTENSIONS = {".csv", ".json", ".txt", ".parquet", ".xlsx"}
+
     @pytest.fixture
     def setup_sample_data(self, pipeline_path):
         """Create sample CSV files so the pipeline has data to process."""
-        # Look for data/ relative to repo root (4 levels up from submissions/pipeline/)
         repo_root = pipeline_path.parent.parent
         data_dir = repo_root / "data"
         data_dir.mkdir(exist_ok=True)
@@ -367,6 +366,22 @@ class TestPipelineExecution:
                 return fn
         return None
 
+    def _clear_output_files(self, pipeline_path):
+        """Remove existing output files so the produces-output test gets a clean slate."""
+        repo_root = pipeline_path.parent.parent
+        output_dirs = ["output", "outputs", "results", "processed"]
+        for dirname in output_dirs:
+            out_dir = repo_root / dirname
+            if out_dir.exists():
+                for f in out_dir.iterdir():
+                    if f.is_file() and f.suffix.lower() in self.OUTPUT_EXTENSIONS:
+                        f.unlink()
+            out_dir = pipeline_path / dirname
+            if out_dir.exists():
+                for f in out_dir.iterdir():
+                    if f.is_file() and f.suffix.lower() in self.OUTPUT_EXTENSIONS:
+                        f.unlink()
+
     def test_pipeline_runs_without_error(self, pipeline_path, setup_sample_data):
         """Pipeline must execute without raising an exception."""
         for req in ["extract.py", "transform.py", "load.py", "run_pipeline.py", "config.py"]:
@@ -401,6 +416,9 @@ class TestPipelineExecution:
         if fn is None:
             pytest.skip("No orchestrator function found")
 
+        # Clear any output files left by the previous test run
+        self._clear_output_files(pipeline_path)
+
         # Collect existing files before running
         def get_all_files(root):
             return set(str(p) for p in root.rglob("*") if p.is_file())
@@ -421,11 +439,9 @@ class TestPipelineExecution:
         files_after = get_all_files(repo_root)
         new_files = files_after - files_before
 
-        # Filter to likely output files (csv, json, txt, parquet)
-        output_extensions = {".csv", ".json", ".txt", ".parquet", ".xlsx"}
         output_files = [
             f for f in new_files
-            if Path(f).suffix.lower() in output_extensions
+            if Path(f).suffix.lower() in self.OUTPUT_EXTENSIONS
         ]
 
         assert len(output_files) >= 1, (
