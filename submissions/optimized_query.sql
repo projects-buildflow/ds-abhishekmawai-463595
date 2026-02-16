@@ -36,4 +36,4 @@
   FROM customers c
   INNER JOIN customer_totals ct ON c.customer_id = ct.customer_id
   WHERE c.signup_date >= '2022-01-01'
-  ORDER BY ct.total_order_value DESC;
+  ORDER BY ct.total_order_value DESC
